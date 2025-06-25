@@ -1,0 +1,1107 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ultimate 20-Level Quiz Challenge</title>
+    <style>
+        /* --- GLOBAL STYLES & THEME --- */
+        :root {
+            --light-lavender: #E6E6FA;
+            --powder-blue: #B0E0E6;
+            --mint-green: #98FB98;
+            --dark-accent: #4a4e69;
+            --white: #FFFFFF;
+            --correct-glow: #2ecc71;
+            --incorrect-glow: #e74c3c;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, var(--powder-blue), var(--light-lavender));
+            color: var(--dark-accent);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* --- SCREEN VISIBILITY --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- UI COMPONENTS --- */
+        h1, h2, h3 {
+            margin-bottom: 20px;
+            color: var(--dark-accent);
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            background-color: var(--mint-green);
+            color: var(--dark-accent);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(152, 251, 152, 0.7);
+            background-color: #87e887;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* --- START SCREEN --- */
+        #start-screen h1 {
+            font-size: 2.5em;
+        }
+
+        #start-screen .features {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 400px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        #start-screen .features li {
+            margin-bottom: 8px;
+            list-style-type: '✅ ';
+            padding-left: 5px;
+        }
+
+        /* --- QUIZ SCREEN --- */
+        #quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-lavender);
+        }
+
+        #hud-left, #hud-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+        }
+
+        #lives-container .heart {
+            color: var(--incorrect-glow);
+            font-size: 1.5em;
+            transition: transform 0.3s ease;
+        }
+        #lives-container .heart.lost {
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        #level-progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--light-lavender);
+            border-radius: 5px;
+            margin-bottom: 25px;
+        }
+
+        #level-progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--mint-green);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        #question-area {
+            position: relative;
+            width: 100%;
+        }
+
+        #timer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background-color: var(--powder-blue);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        #question-text {
+            min-height: 80px;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+        }
+        
+        #hint-box {
+            min-height: 30px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            font-style: italic;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        #hint-box.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+
+        #answer-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .answer-btn {
+            width: 100%;
+            background-color: var(--powder-blue);
+            padding: 20px;
+        }
+        .answer-btn:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(176, 224, 230, 0.7);
+        }
+        
+        .answer-btn.correct {
+            background-color: var(--correct-glow);
+            color: var(--white);
+            animation: pulse 0.5s ease;
+            border-color: #27ae60;
+        }
+        
+        .answer-btn.incorrect {
+            background-color: var(--incorrect-glow);
+            color: var(--white);
+            animation: shake 0.5s ease;
+        }
+
+        #lifeline-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .lifeline-btn {
+            background-color: #f2f2f2;
+            color: var(--dark-accent);
+            border: 2px solid var(--light-lavender);
+            font-size: 0.9em;
+            padding: 10px 15px;
+        }
+        .lifeline-btn:hover:not(:disabled) {
+             background-color: #e0e0e0;
+        }
+
+        /* --- MODALS --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .modal-content h2 {
+            font-size: 2.2em;
+            margin-bottom: 15px;
+        }
+        #level-stats p {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        /* --- SETTINGS & STATS --- */
+        #settings-btn, #stats-btn {
+            position: absolute;
+            top: 15px;
+            font-size: 1.5em;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--dark-accent);
+            opacity: 0.7;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        #settings-btn:hover, #stats-btn:hover {
+            opacity: 1;
+            transform: scale(1.1) rotate(5deg);
+        }
+        #settings-btn { right: 15px; }
+        #stats-btn { left: 15px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat-item .label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .stat-item .value {
+            font-size: 1.4em;
+            color: var(--mint-green);
+        }
+        
+        /* --- ANIMATIONS --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+        
+        @keyframes slide-in {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* --- RESPONSIVENESS --- */
+        @media (max-width: 600px) {
+            #app-container {
+                padding: 15px;
+            }
+            h1 { font-size: 1.8em; }
+            h2 { font-size: 1.5em; }
+            #question-text { font-size: 1.2em; min-height: 60px; }
+            #answer-options {
+                grid-template-columns: 1fr;
+            }
+            .btn {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+            .answer-btn { padding: 15px; }
+            #quiz-header { flex-direction: column; gap: 10px; }
+            #lifeline-container { flex-wrap: wrap; }
+            #timer {
+                position: static;
+                margin: 0 auto 15px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Application Container -->
+    <div id="app-container">
+
+        <!-- Screen: Start -->
+        <div id="start-screen" class="screen active">
+            <h1>The Ultimate Quiz Challenge</h1>
+            <p>Test your knowledge across 20 challenging levels!</p>
+            <div class="features">
+                <strong>Features:</strong>
+                <ul>
+                    <li>20 Levels of Increasing Difficulty</li>
+                    <li>Advanced Scoring with Speed Bonuses</li>
+                    <li>Helpful Lifelines: 50/50, Hints & Time Freeze</li>
+                    <li>Persistent Progress - Never Lose Your Place!</li>
+                </ul>
+            </div>
+            <button id="start-btn" class="btn">Start Quiz</button>
+            <button id="continue-btn" class="btn" style="display: none;">Continue Previous Game</button>
+        </div>
+
+        <!-- Screen: Quiz -->
+        <div id="quiz-screen" class="screen">
+            <div id="quiz-header">
+                <div id="hud-left">
+                    <span id="level-indicator">Level: 1/20</span>
+                    <span id="score-display">Score: 0</span>
+                </div>
+                <div id="hud-right">
+                    <span>Lives:</span>
+                    <div id="lives-container">
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="level-progress-bar-container">
+                <div id="level-progress-bar"></div>
+            </div>
+
+            <div id="question-area">
+                <div id="timer">15</div>
+                <h2 id="question-text">Question text will appear here.</h2>
+                <div id="hint-box"></div>
+            </div>
+
+            <div id="answer-options">
+                <!-- Answer buttons will be generated here by JS -->
+            </div>
+
+            <div id="lifeline-container">
+                <button id="lifeline-5050" class="btn lifeline-btn" title="Removes two incorrect answers">50/50 (<span id="lifeline-5050-count"></span>)</button>
+                <button id="lifeline-hint" class="btn lifeline-btn" title="Reveals a helpful hint">Hint (<span id="lifeline-hint-count"></span>)</button>
+                <button id="lifeline-freeze" class="btn lifeline-btn" title="Freezes the timer for 5 seconds">❄️ Freeze (<span id="lifeline-freeze-count"></span>)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top-level UI buttons -->
+    <button id="stats-btn" title="View Your Stats">📊</button>
+    <button id="settings-btn" title="Settings">⚙️</button>
+
+    <!-- Modal: Level Complete -->
+    <div id="level-complete-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="level-complete-title">Level 1 Complete!</h2>
+            <div id="level-stats">
+                <p>Level Score: <strong id="level-score"></strong></p>
+                <p>Speed Bonus: <strong id="level-bonus"></strong></p>
+                <p>Accuracy: <strong id="level-accuracy"></strong></p>
+            </div>
+            <p>Get ready for the next challenge!</p>
+            <button id="next-level-btn" class="btn">Next Level</button>
+        </div>
+    </div>
+
+    <!-- Modal: Game Over -->
+    <div id="game-over-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Game Over</h2>
+            <p>You've run out of lives!</p>
+            <p>Final Score: <strong id="final-score-gameover"></strong></p>
+            <button id="restart-game-btn" class="btn">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Modal: All Levels Complete -->
+    <div id="all-complete-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>🎉 Congratulations! 🎉</h2>
+            <p>You are a true Quiz Master! You've completed all 20 levels.</p>
+            <p>Final Score: <strong id="final-score-complete"></strong></p>
+            <button id="play-again-btn" class="btn">Play Again From Start</button>
+        </div>
+    </div>
+    
+    <!-- Modal: Settings -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0;">
+                <label for="sound-toggle">Sound Effects</label>
+                <input type="checkbox" id="sound-toggle" checked>
+            </div>
+            <button id="reset-progress-btn" class="btn" style="background-color: var(--incorrect-glow); color: var(--white);">Reset All Progress</button>
+            <button id="close-settings-btn" class="btn">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal: Stats -->
+    <div id="stats-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Your Quiz Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="label">Highest Level Reached</span>
+                    <span id="stat-level" class="value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Highest Score</span>
+                    <span id="stat-highscore" class="value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Overall Accuracy</span>
+                    <span id="stat-accuracy" class="value">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Questions Answered</span>
+                    <span id="stat-q-answered" class="value">0</span>
+                </div>
+            </div>
+            <button id="close-stats-btn" class="btn">Close</button>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="sound-click" src="https://www.soundjay.com/buttons/sounds/button-16.mp3" preload="auto"></audio>
+    <audio id="sound-correct" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
+    <audio id="sound-incorrect" src="https://www.soundjay.com/buttons/sounds/button-10.mp3" preload="auto"></audio>
+    <audio id="sound-level-up" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+
+
+<script>
+    // --- QUESTION DATABASE ---
+    const quizData = [
+        // Level 1: General Knowledge - Easiest
+        { level: 1, question: "What is the capital of France?", options: ["Berlin", "Madrid", "Paris", "Rome"], answer: "Paris", hint: "It's known as the 'City of Love'." },
+        { level: 1, question: "Which planet is known as the Red Planet?", options: ["Earth", "Mars", "Jupiter", "Venus"], answer: "Mars", hint: "It's the fourth planet from the Sun." },
+        { level: 1, question: "What is 2 + 2?", options: ["3", "4", "5", "6"], answer: "4", hint: "Think of two pairs of apples." },
+        { level: 1, question: "What color is a banana?", options: ["Blue", "Red", "Yellow", "Green"], answer: "Yellow", hint: "Monkeys love them." },
+        { level: 1, question: "How many days are in a week?", options: ["5", "6", "7", "8"], answer: "7", hint: "It starts with Sunday or Monday." },
+        
+        // Level 2: General Knowledge - Easy
+        { level: 2, question: "Who wrote 'Romeo and Juliet'?", options: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"], answer: "William Shakespeare", hint: "A famous playwright from Stratford-upon-Avon." },
+        { level: 2, question: "What is the largest ocean on Earth?", options: ["Atlantic", "Indian", "Arctic", "Pacific"], answer: "Pacific", hint: "It covers about one-third of the surface of the Earth." },
+        { level: 2, question: "Who painted the Mona Lisa?", options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"], answer: "Leonardo da Vinci", hint: "He was an Italian Renaissance polymath." },
+        { level: 2, question: "How many continents are there?", options: ["5", "6", "7", "8"], answer: "7", hint: "Antarctica, Africa, Asia, Australia, Europe, North America, South America." },
+        { level: 2, question: "What is the main ingredient in guacamole?", options: ["Tomato", "Avocado", "Onion", "Lime"], answer: "Avocado", hint: "It's a green, pear-shaped fruit." },
+        
+        // Level 3: Science - Basics
+        { level: 3, question: "What is the chemical symbol for water?", options: ["H2O", "O2", "CO2", "HO"], answer: "H2O", hint: "Two parts Hydrogen, one part Oxygen." },
+        { level: 3, question: "What gas do plants absorb from the atmosphere for photosynthesis?", options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"], answer: "Carbon Dioxide", hint: "It's what humans exhale." },
+        { level: 3, question: "What force pulls objects toward the center of the Earth?", options: ["Magnetism", "Friction", "Gravity", "Inertia"], answer: "Gravity", hint: "An apple famously fell on Isaac Newton's head." },
+        { level: 3, question: "How many legs does a spider have?", options: ["6", "8", "10", "4"], answer: "8", hint: "Two more than an insect." },
+        { level: 3, question: "What is the name of the star at the center of our solar system?", options: ["Proxima Centauri", "Sirius", "The Sun", "Betelgeuse"], answer: "The Sun", hint: "It gives us light and warmth." },
+        
+        // Level 4: Geography - Basics
+        { level: 4, question: "What is the longest river in the world?", options: ["Amazon", "Nile", "Yangtze", "Mississippi"], answer: "Nile", hint: "It flows through northeastern Africa." },
+        { level: 4, question: "What is the capital of Japan?", options: ["Kyoto", "Osaka", "Tokyo", "Hiroshima"], answer: "Tokyo", hint: "It's a bustling metropolis known for its Imperial Palace." },
+        { level: 4, question: "On which continent is the country of Egypt located?", options: ["Asia", "Europe", "Africa", "South America"], answer: "Africa", hint: "This continent is known for its pyramids and the Sahara desert." },
+        { level: 4, question: "Which country is famous for kangaroos and koalas?", options: ["New Zealand", "South Africa", "Australia", "Brazil"], answer: "Australia", hint: "It's also a continent." },
+        { level: 4, question: "What is the largest desert in the world (including polar deserts)?", options: ["Sahara", "Arabian", "Gobi", "Antarctic Polar"], answer: "Antarctic Polar", hint: "A desert is defined by low precipitation, not temperature." },
+        
+        // Level 5: Pop Culture - Easy
+        { level: 5, question: "Who is the main character in the 'Harry Potter' series?", options: ["Ron Weasley", "Hermione Granger", "Harry Potter", "Albus Dumbledore"], answer: "Harry Potter", hint: "He's known as 'The Boy Who Lived'." },
+        { level: 5, question: "What is the name of Mickey Mouse's pet dog?", options: ["Goofy", "Donald", "Pluto", "Max"], answer: "Pluto", hint: "Unlike Goofy, this character doesn't speak." },
+        { level: 5, question: "In 'The Lion King', what is the name of Simba's wicked uncle?", options: ["Mufasa", "Zazu", "Scar", "Timon"], answer: "Scar", hint: "He has a distinctive mark over his eye." },
+        { level: 5, question: "Which legendary band was known as the 'Fab Four'?", options: ["The Rolling Stones", "The Beatles", "Queen", "Led Zeppelin"], answer: "The Beatles", hint: "They came from Liverpool." },
+        { level: 5, question: "What is the name of the fictional city where Batman operates?", options: ["Metropolis", "Gotham City", "Star City", "Central City"], answer: "Gotham City", hint: "It's known for its dark, gothic architecture." },
+        
+        // Level 6: History - Easy
+        { level: 6, question: "Who was the first President of the United States?", options: ["Thomas Jefferson", "Abraham Lincoln", "John Adams", "George Washington"], answer: "George Washington", hint: "His face is on the one-dollar bill." },
+        { level: 6, question: "The Great Wall is a famous landmark in which country?", options: ["India", "Japan", "China", "Egypt"], answer: "China", hint: "It's one of the largest man-made structures." },
+        { level: 6, question: "In which country did the ancient Olympic Games originate?", options: ["Rome", "Egypt", "Greece", "Persia"], answer: "Greece", hint: "The games were held in Olympia." },
+        { level: 6, question: "What ship did the Pilgrims sail on to reach America in 1620?", options: ["The Santa Maria", "The Mayflower", "The Titanic", "The Endeavour"], answer: "The Mayflower", hint: "It's associated with Plymouth Rock." },
+        { level: 6, question: "Who is credited with inventing the telephone?", options: ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell", "Guglielmo Marconi"], answer: "Alexander Graham Bell", hint: "His first words on it were to his assistant, Mr. Watson." },
+        
+        // Level 7: Technology - Basics
+        { level: 7, question: "What does 'CPU' stand for in computing?", options: ["Central Processing Unit", "Computer Personal Unit", "Central Power Unit", "Core Processing Unit"], answer: "Central Processing Unit", hint: "It's often called the 'brain' of the computer." },
+        { level: 7, question: "What company makes the iPhone?", options: ["Samsung", "Google", "Apple", "Microsoft"], answer: "Apple", hint: "Its logo is a piece of fruit." },
+        { level: 7, question: "What does 'www' stand for in a website address?", options: ["World Wide Web", "Web World Wide", "World Web Window", "Wide World Web"], answer: "World Wide Web", hint: "It was invented by Tim Berners-Lee." },
+        { level: 7, question: "What does the 'G' in 5G stand for?", options: ["Gigabyte", "Global", "Generation", "Group"], answer: "Generation", hint: "It refers to the evolution of mobile networks." },
+        { level: 7, question: "A computer's screen is also called a what?", options: ["Mouse", "Keyboard", "Tower", "Monitor"], answer: "Monitor", hint: "It displays visual information." },
+
+        // Level 8: Literature - Easy
+        { level: 8, question: "Who wrote the play 'Hamlet'?", options: ["Oscar Wilde", "George Bernard Shaw", "William Shakespeare", "Christopher Marlowe"], answer: "William Shakespeare", hint: "The play features the famous line, 'To be, or not to be'." },
+        { level: 8, question: "What fictional detective lived at 221B Baker Street?", options: ["Hercule Poirot", "Sherlock Holmes", "Philip Marlowe", "Sam Spade"], answer: "Sherlock Holmes", hint: "He was created by Sir Arthur Conan Doyle." },
+        { level: 8, question: "In 'The Lord of the Rings', what is the name of the wizard who guides the Fellowship?", options: ["Saruman", "Radagast", "Sauron", "Gandalf"], answer: "Gandalf", hint: "He is known for his grey, and later white, robes." },
+        { level: 8, question: "Who wrote 'The Cat in the Hat'?", options: ["Roald Dahl", "J.K. Rowling", "Dr. Seuss", "A. A. Milne"], answer: "Dr. Seuss", hint: "He is famous for his rhyming children's books." },
+        { level: 8, question: "How many books are in the original 'Harry Potter' series?", options: ["5", "6", "7", "8"], answer: "7", hint: "The last one is titled 'The Deathly Hallows'." },
+
+        // Level 9: Science - Intermediate
+        { level: 9, question: "What is the hardest known natural substance on Earth?", options: ["Gold", "Iron", "Quartz", "Diamond"], answer: "Diamond", hint: "It is a form of carbon." },
+        { level: 9, question: "What is the chemical symbol for Gold?", options: ["Go", "Ag", "Au", "Gd"], answer: "Au", hint: "It comes from the Latin word 'aurum'." },
+        { level: 9, question: "Which part of a plant is primarily responsible for photosynthesis?", options: ["Root", "Stem", "Flower", "Leaf"], answer: "Leaf", hint: "It contains chlorophyll, which captures sunlight." },
+        { level: 9, question: "What is the approximate speed of light in a vacuum?", options: ["300,000 km/s", "150,000 km/s", "500,000 km/s", "1,000,000 km/s"], answer: "300,000 km/s", hint: "It's the universe's ultimate speed limit." },
+        { level: 9, question: "What are the three primary states of matter?", options: ["Solid, Liquid, Gas", "Solid, Metal, Gas", "Liquid, Plasma, Solid", "Gas, Water, Solid"], answer: "Solid, Liquid, Gas", hint: "Ice, water, and steam are examples for H2O." },
+
+        // Level 10: Geography - Intermediate
+        { level: 10, question: "What is the highest mountain in the world?", options: ["K2", "Kangchenjunga", "Mount Everest", "Lhotse"], answer: "Mount Everest", hint: "It is located in the Himalayas." },
+        { level: 10, question: "As of 2023, which country has the largest population?", options: ["China", "United States", "India", "Indonesia"], answer: "India", hint: "This country recently surpassed its northern neighbor." },
+        { level: 10, question: "What is the capital of Canada?", options: ["Toronto", "Vancouver", "Montreal", "Ottawa"], answer: "Ottawa", hint: "It's not the country's largest city by population." },
+        { level: 10, question: "Through which major European city does the River Seine flow?", options: ["London", "Paris", "Rome", "Berlin"], answer: "Paris", hint: "The city is home to the Eiffel Tower." },
+        { level: 10, question: "The Great Barrier Reef is located off the coast of which country?", options: ["South Africa", "Brazil", "Australia", "Thailand"], answer: "Australia", hint: "It's in the Coral Sea, off the coast of Queensland." },
+
+        // Level 11: History - Intermediate
+        { level: 11, question: "Who was the Roman god of war?", options: ["Jupiter", "Apollo", "Mars", "Neptune"], answer: "Mars", hint: "A planet is named after him." },
+        { level: 11, question: "In what year did World War I begin?", options: ["1905", "1914", "1920", "1939"], answer: "1914", hint: "It started after the assassination of Archduke Franz Ferdinand." },
+        { level: 11, question: "The ancient city of Rome was built on how many hills?", options: ["Three", "Five", "Seven", "Nine"], answer: "Seven", hint: "Known as the 'City of ______ Hills'." },
+        { level: 11, question: "Who was the famous queen of ancient Egypt known for her alliance with Julius Caesar and Mark Antony?", options: ["Nefertiti", "Hatshepsut", "Cleopatra", "Sobekneferu"], answer: "Cleopatra", hint: "She was the last active ruler of the Ptolemaic Kingdom of Egypt." },
+        { level: 11, question: "The Renaissance, a period of great cultural change and artistic achievement, began in which country?", options: ["France", "England", "Spain", "Italy"], answer: "Italy", hint: "Cities like Florence were at the heart of this movement." },
+
+        // Level 12: Arts & Music - Intermediate
+        { level: 12, question: "Who painted the ceiling of the Sistine Chapel?", options: ["Leonardo da Vinci", "Raphael", "Donatello", "Michelangelo"], answer: "Michelangelo", hint: "His famous works there include 'The Creation of Adam'." },
+        { level: 12, question: "Which classical composer became deaf in his later years?", options: ["Mozart", "Bach", "Beethoven", "Chopin"], answer: "Beethoven", hint: "He composed his famous 9th Symphony while almost completely deaf." },
+        { level: 12, question: "A standard piano has how many keys?", options: ["66", "76", "88", "102"], answer: "88", hint: "The keys are divided into black and white." },
+        { level: 12, question: "'The Starry Night' is a famous painting by which artist?", options: ["Claude Monet", "Edvard Munch", "Vincent van Gogh", "Pablo Picasso"], answer: "Vincent van Gogh", hint: "A Dutch post-impressionist painter who famously cut off his own ear." },
+        { level: 12, question: "Who is widely known as the 'King of Pop'?", options: ["Elvis Presley", "James Brown", "Michael Jackson", "Prince"], answer: "Michael Jackson", hint: "He was famous for the 'moonwalk' dance." },
+
+        // Level 13: Mythology
+        { level: 13, question: "In Greek mythology, who is the king of the gods?", options: ["Hades", "Poseidon", "Zeus", "Apollo"], answer: "Zeus", hint: "He wields a thunderbolt and resides on Mount Olympus." },
+        { level: 13, question: "In Norse mythology, who is the god of thunder?", options: ["Odin", "Loki", "Thor", "Freyr"], answer: "Thor", hint: "He carries a powerful hammer named Mjölnir." },
+        { level: 13, question: "In Greek mythology, who flew too close to the sun with wings made of feathers and wax?", options: ["Daedalus", "Perseus", "Theseus", "Icarus"], answer: "Icarus", hint: "His father warned him not to fly too high." },
+        { level: 13, question: "What creature in Greek mythology was half man and half bull?", options: ["Centaur", "Satyr", "Minotaur", "Gorgon"], answer: "Minotaur", hint: "It was imprisoned in a labyrinth." },
+        { level: 13, question: "In Egyptian mythology, who is the god of the afterlife and mummification?", options: ["Ra", "Horus", "Anubis", "Osiris"], answer: "Anubis", hint: "He is often depicted with the head of a jackal." },
+
+        // Level 14: World Facts - Hard
+        { level: 14, question: "How many time zones does Russia span?", options: ["7", "9", "11", "13"], answer: "11", hint: "It is the largest country by land area." },
+        { level: 14, question: "By number of native speakers, what is the most spoken language in the world?", options: ["English", "Spanish", "Hindi", "Mandarin Chinese"], answer: "Mandarin Chinese", hint: "It is the primary language of China." },
+        { level: 14, question: "Which country is known as the 'Land of the Rising Sun'?", options: ["China", "South Korea", "Japan", "Vietnam"], answer: "Japan", hint: "The country's name in its own language reflects this." },
+        { level: 14, question: "What is the official currency of the United Kingdom?", options: ["Euro", "Dollar", "Pound Sterling", "Franc"], answer: "Pound Sterling", hint: "Its symbol is £." },
+        { level: 14, question: "Which two countries share the longest continuous international border?", options: ["Russia and China", "Chile and Argentina", "Canada and USA", "Kazakhstan and Russia"], answer: "Canada and USA", hint: "The border stretches over 8,891 kilometers." },
+
+        // Level 15: Science - Harder
+        { level: 15, question: "What is often called the 'powerhouse' of the cell?", options: ["Nucleus", "Ribosome", "Mitochondrion", "Cell Membrane"], answer: "Mitochondrion", hint: "It generates most of the cell's supply of adenosine triphosphate (ATP)." },
+        { level: 15, question: "What does a Geiger counter measure?", options: ["Acidity (pH)", "Air pressure", "Ionizing radiation", "Electrical current"], answer: "Ionizing radiation", hint: "It is famous for its 'clicking' sound in the presence of its target." },
+        { level: 15, question: "What is the most abundant gas in the Earth's atmosphere?", options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Argon"], answer: "Nitrogen", hint: "It makes up about 78% of the air we breathe." },
+        { level: 15, question: "What is the scientific study of earthquakes and seismic waves called?", options: ["Volcanology", "Geology", "Seismology", "Meteorology"], answer: "Seismology", hint: "It uses a 'Richter' scale." },
+        { level: 15, question: "The famous equation E=mc² is a key part of which scientific theory?", options: ["Quantum Mechanics", "String Theory", "General Relativity", "Special Relativity"], answer: "Special Relativity", hint: "Developed by Albert Einstein, it relates mass and energy." },
+
+        // Level 16: Technology - Advanced
+        { level: 16, question: "What does the acronym 'SQL' stand for?", options: ["Structured Query Language", "Standard Query Language", "Simple Query Logic", "System Query Link"], answer: "Structured Query Language", hint: "It's used for managing data in relational databases." },
+        { level: 16, question: "In what year was the first widely recognized 'emoticon' :-), used?", options: ["1975", "1982", "1991", "1999"], answer: "1982", hint: "It was first proposed by Scott Fahlman at Carnegie Mellon University." },
+        { level: 16, question: "Who is often considered the 'father of the modern computer' for his work on the Turing machine?", options: ["Charles Babbage", "John von Neumann", "Alan Turing", "Bill Gates"], answer: "Alan Turing", hint: "He was a key figure in breaking the Enigma code during WWII." },
+        { level: 16, question: "What does the acronym 'HTTP' stand for?", options: ["HyperText Transfer Protocol", "High-Text Transfer Protocol", "HyperText Transmission Process", "Hyperlink Transfer Protocol"], answer: "HyperText Transfer Protocol", hint: "It's the foundation of data communication for the World Wide Web." },
+        { level: 16, question: "What was the first commercially successful video game?", options: ["Tetris", "Space Invaders", "Pac-Man", "Pong"], answer: "Pong", hint: "It was a simple table tennis simulation game released by Atari." },
+
+        // Level 17: History - Advanced
+        { level: 17, question: "The Magna Carta, a foundational document for constitutional law, was signed in what year?", options: ["1066", "1215", "1348", "1492"], answer: "1215", hint: "It was signed by King John of England at Runnymede." },
+        { level: 17, question: "Who was the last Tsar of Russia?", options: ["Peter the Great", "Ivan the Terrible", "Alexander III", "Nicholas II"], answer: "Nicholas II", hint: "He and his family were executed in 1918." },
+        { level: 17, question: "The Hundred Years' War was primarily fought between which two kingdoms?", options: ["Spain and Portugal", "England and France", "The Holy Roman Empire and The Ottoman Empire", "Rome and Carthage"], answer: "England and France", hint: "It was a series of conflicts over the French throne." },
+        { level: 17, question: "What ancient city was famously destroyed by the eruption of Mount Vesuvius in 79 AD?", options: ["Athens", "Carthage", "Pompeii", "Babylon"], answer: "Pompeii", hint: "The city was buried under a thick layer of volcanic ash." },
+        { level: 17, question: "Who was the founder and first Great Khan of the Mongol Empire?", options: ["Kublai Khan", "Attila the Hun", "Genghis Khan", "Ogedei Khan"], answer: "Genghis Khan", hint: "He united many of the nomadic tribes of Northeast Asia." },
+
+        // Level 18: Literature & Philosophy - Advanced
+        { level: 18, question: "Who wrote the classic dystopian novel 'Brave New World'?", options: ["George Orwell", "Aldous Huxley", "Ray Bradbury", "Philip K. Dick"], answer: "Aldous Huxley", hint: "The novel explores a futuristic society driven by technology and conditioning." },
+        { level: 18, question: "The philosophical quote 'I think, therefore I am' (Cogito, ergo sum) is attributed to which thinker?", options: ["Socrates", "Plato", "Aristotle", "René Descartes"], answer: "René Descartes", hint: "He is considered the father of modern philosophy." },
+        { level: 18, question: "In Dante Alighieri's 'Inferno', how many circles of Hell are described?", options: ["Seven", "Eight", "Nine", "Ten"], answer: "Nine", hint: "Each circle represents a different category of sin." },
+        { level: 18, question: "Who is the author of the ancient Chinese text 'The Art of War'?", options: ["Laozi", "Confucius", "Sun Tzu", "Zhuge Liang"], answer: "Sun Tzu", hint: "It is a classic work on military strategy." },
+        { level: 18, question: "Which novel begins with the line 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in a want of a wife.'?", options: ["Jane Eyre", "Wuthering Heights", "Pride and Prejudice", "Sense and Sensibility"], answer: "Pride and Prejudice", hint: "It was written by Jane Austen." },
+
+        // Level 19: Geography & Science - Expert
+        { level: 19, question: "What is the capital city of Mongolia?", options: ["Bishkek", "Astana", "Ulaanbaatar", "Tashkent"], answer: "Ulaanbaatar", hint: "It is known for being the coldest national capital in the world." },
+        { level: 19, question: "Which chemical element has the atomic number 1?", options: ["Helium", "Oxygen", "Lithium", "Hydrogen"], answer: "Hydrogen", hint: "It is the most abundant chemical substance in the universe." },
+        { level: 19, question: "What is the name of the deepest point in all of Earth's oceans?", options: ["Puerto Rico Trench", "Java Trench", "Tonga Trench", "Mariana Trench"], answer: "Mariana Trench", hint: "It's located in the western Pacific Ocean." },
+        { level: 19, question: "What is the scientific term for the study of fungi?", options: ["Botany", "Virology", "Mycology", "Ornithology"], answer: "Mycology", hint: "Mushrooms and yeasts fall under this field." },
+        { level: 19, question: "The Atacama Desert, known as one of the driest places on Earth, is primarily located on which continent?", options: ["Africa", "Australia", "North America", "South America"], answer: "South America", hint: "It runs along the Pacific coast, west of the Andes mountains." },
+
+        // Level 20: Expert Level Mix
+        { level: 20, question: "What is the Schwarzschild radius of a black hole?", options: ["The point of no return", "The event horizon's radius", "The singularity's size", "The photon sphere"], answer: "The event horizon's radius", hint: "Named after German astronomer Karl Schwarzschild." },
+        { level: 20, question: "In computing, what does 'ACID' stand for in the context of database transactions?", options: ["Atomicity, Consistency, Isolation, Durability", "Action, Commit, Integrity, Data", "Availability, Concurrency, Indexing, Durability", "Authentication, Control, Information, Design"], answer: "Atomicity, Consistency, Isolation, Durability", hint: "These are four key properties defining a reliable transaction." },
+        { level: 20, question: "Who composed the 'Brandenburg Concertos'?", options: ["Mozart", "Beethoven", "Bach", "Vivaldi"], answer: "Bach", hint: "A master of Baroque music." },
+        { level: 20, question: "What is the symbol for the chemical element Tungsten?", options: ["T", "Tg", "W", "Tu"], answer: "W", hint: "It comes from its old name, Wolfram." },
+        { level: 20, question: "The 'Coriolis effect' is most responsible for what large-scale natural phenomenon?", options: ["Ocean tides", "Earthquakes", "The rotation of hurricanes", "Auroras"], answer: "The rotation of hurricanes", hint: "It's an effect of Earth's rotation on moving objects." },
+    ];
+    
+    quizData.sort((a,b) => a.level - b.level); // Ensure it's sorted by level
+
+    // --- DOM ELEMENT SELECTORS ---
+    const appContainer = document.getElementById('app-container');
+    const screens = document.querySelectorAll('.screen');
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    
+    // Buttons
+    const startBtn = document.getElementById('start-btn');
+    const continueBtn = document.getElementById('continue-btn');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const restartGameBtn = document.getElementById('restart-game-btn');
+    const playAgainBtn = document.getElementById('play-again-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const statsBtn = document.getElementById('stats-btn');
+
+    // Quiz UI
+    const levelIndicator = document.getElementById('level-indicator');
+    const scoreDisplay = document.getElementById('score-display');
+    const livesContainer = document.getElementById('lives-container');
+    const levelProgressBar = document.getElementById('level-progress-bar');
+    const timerDisplay = document.getElementById('timer');
+    const questionText = document.getElementById('question-text');
+    const hintBox = document.getElementById('hint-box');
+    const answerOptionsContainer = document.getElementById('answer-options');
+    
+    // Lifelines
+    const lifeline5050Btn = document.getElementById('lifeline-5050');
+    const lifelineHintBtn = document.getElementById('lifeline-hint');
+    const lifelineFreezeBtn = document.getElementById('lifeline-freeze');
+
+    // Modals
+    const levelCompleteModal = document.getElementById('level-complete-modal');
+    const gameOverModal = document.getElementById('game-over-modal');
+    const allCompleteModal = document.getElementById('all-complete-modal');
+    const settingsModal = document.getElementById('settings-modal');
+    const statsModal = document.getElementById('stats-modal');
+
+    // Sounds
+    const soundClick = document.getElementById('sound-click');
+    const soundCorrect = document.getElementById('sound-correct');
+    const soundIncorrect = document.getElementById('sound-incorrect');
+    const soundLevelUp = document.getElementById('sound-level-up');
+
+    // --- GAME STATE ---
+    let gameState = {};
+    let questionsForCurrentLevel = [];
+    let timerInterval;
+    const TOTAL_LEVELS = 20;
+
+    const defaultGameState = {
+        currentLevel: 1,
+        currentQuestionIndex: 0,
+        score: 0,
+        lives: 3,
+        lifelines: { '5050': 2, hint: 3, freeze: 1 },
+        stats: {
+            highestLevel: 1,
+            highScore: 0,
+            questionsAnswered: 0,
+            correctAnswers: 0,
+        },
+        soundEnabled: true
+    };
+
+    // --- CORE GAME LOGIC ---
+
+    function init() {
+        loadProgress();
+        setupEventListeners();
+        if (gameState.currentLevel > 1) {
+            continueBtn.style.display = 'inline-block';
+            continueBtn.textContent = `Continue from Level ${gameState.currentLevel}`;
+        }
+    }
+
+    function startGame(isContinuation = false) {
+        if (!isContinuation) {
+            resetGame();
+        }
+        playSound(soundClick);
+        switchScreen('quiz-screen');
+        loadLevel();
+    }
+    
+    function resetGame() {
+        gameState = JSON.parse(JSON.stringify(defaultGameState)); // Deep copy
+        saveProgress();
+    }
+
+    function switchScreen(screenId) {
+        screens.forEach(screen => screen.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function loadLevel() {
+        questionsForCurrentLevel = quizData.filter(q => q.level === gameState.currentLevel);
+        gameState.currentQuestionIndex = 0;
+        updateHUD();
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (gameState.currentQuestionIndex >= questionsForCurrentLevel.length) {
+            levelComplete();
+            return;
+        }
+
+        resetQuestionUI();
+        const question = questionsForCurrentLevel[gameState.currentQuestionIndex];
+        
+        questionText.textContent = question.question;
+        answerOptionsContainer.innerHTML = '';
+        
+        const shuffledOptions = [...question.options].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach(option => {
+            const button = document.createElement('button');
+            button.className = 'btn answer-btn';
+            button.textContent = option;
+            if (option === question.answer) {
+                button.dataset.correct = true;
+            }
+            button.addEventListener('click', selectAnswer);
+            answerOptionsContainer.appendChild(button);
+        });
+
+        updateLevelProgressBar();
+        startTimer();
+    }
+    
+    function selectAnswer(e) {
+        clearInterval(timerInterval);
+        const selectedBtn = e.target;
+        const isCorrect = selectedBtn.dataset.correct === 'true';
+
+        // Disable all buttons
+        Array.from(answerOptionsContainer.children).forEach(btn => btn.disabled = true);
+        
+        gameState.stats.questionsAnswered++;
+
+        if (isCorrect) {
+            handleCorrectAnswer(selectedBtn);
+        } else {
+            handleIncorrectAnswer(selectedBtn);
+        }
+        saveProgress();
+    }
+
+    function handleCorrectAnswer(button) {
+        playSound(soundCorrect);
+        button.classList.add('correct');
+        
+        const timeRemaining = parseInt(timerDisplay.textContent);
+        const points = 100;
+        const bonus = timeRemaining * 10;
+        gameState.score += points + bonus;
+        gameState.stats.correctAnswers++;
+        
+        updateHUD();
+        
+        setTimeout(nextQuestion, 1500);
+    }
+    
+    function handleIncorrectAnswer(button) {
+        playSound(soundIncorrect);
+        gameState.lives--;
+        button.classList.add('incorrect');
+        
+        // Highlight the correct answer
+        const correctBtn = answerOptionsContainer.querySelector('[data-correct="true"]');
+        if(correctBtn) correctBtn.classList.add('correct');
+
+        updateHUD();
+
+        if (gameState.lives <= 0) {
+            setTimeout(gameOver, 1500);
+        } else {
+            setTimeout(nextQuestion, 2000);
+        }
+    }
+    
+    function nextQuestion() {
+        gameState.currentQuestionIndex++;
+        loadQuestion();
+    }
+
+    function levelComplete() {
+        playSound(soundLevelUp);
+        
+        // Show Level Stats (Example stats, you can make these more detailed)
+        document.getElementById('level-complete-title').textContent = `Level ${gameState.currentLevel} Complete!`;
+        // These stats would need more logic to be accurate per level
+        document.getElementById('level-score').textContent = '...'; 
+        document.getElementById('level-bonus').textContent = '...';
+        document.getElementById('level-accuracy').textContent = '...';
+        
+        showModal('level-complete-modal');
+        
+        if (gameState.currentLevel >= TOTAL_LEVELS) {
+            allLevelsComplete();
+        } else {
+            gameState.currentLevel++;
+            if(gameState.currentLevel > gameState.stats.highestLevel) {
+                gameState.stats.highestLevel = gameState.currentLevel;
+            }
+            saveProgress();
+        }
+    }
+    
+    function allLevelsComplete() {
+        document.getElementById('level-complete-modal').classList.remove('active');
+        document.getElementById('final-score-complete').textContent = gameState.score;
+        showModal('all-complete-modal');
+    }
+
+    function gameOver() {
+        document.getElementById('final-score-gameover').textContent = gameState.score;
+        showModal('game-over-modal');
+    }
+
+    // --- UI & HUD ---
+
+    function updateHUD() {
+        levelIndicator.textContent = `Level: ${gameState.currentLevel}/${TOTAL_LEVELS}`;
+        scoreDisplay.textContent = `Score: ${gameState.score}`;
+        
+        // Update lives
+        livesContainer.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+            const heart = document.createElement('span');
+            heart.className = 'heart';
+            heart.textContent = '❤️';
+            if(i >= gameState.lives) {
+                heart.classList.add('lost');
+            }
+            livesContainer.appendChild(heart);
+        }
+
+        // Update lifeline counts
+        document.getElementById('lifeline-5050-count').textContent = gameState.lifelines['5050'];
+        document.getElementById('lifeline-hint-count').textContent = gameState.lifelines.hint;
+        document.getElementById('lifeline-freeze-count').textContent = gameState.lifelines.freeze;
+        
+        lifeline5050Btn.disabled = gameState.lifelines['5050'] <= 0;
+        lifelineHintBtn.disabled = gameState.lifelines.hint <= 0;
+        lifelineFreezeBtn.disabled = gameState.lifelines.freeze <= 0;
+    }
+    
+    function updateLevelProgressBar() {
+        const progress = (gameState.currentQuestionIndex / questionsForCurrentLevel.length) * 100;
+        levelProgressBar.style.width = `${progress}%`;
+    }
+    
+    function resetQuestionUI() {
+        clearInterval(timerInterval);
+        timerDisplay.style.color = 'var(--dark-accent)';
+        hintBox.classList.remove('visible');
+        hintBox.textContent = '';
+        Array.from(answerOptionsContainer.children).forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('correct', 'incorrect');
+        });
+        updateHUD();
+    }
+
+    // --- TIMER LOGIC ---
+    function startTimer() {
+        let timeLeft = 15;
+        timerDisplay.textContent = timeLeft;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            if (timeLeft < 6) {
+                timerDisplay.style.color = 'var(--incorrect-glow)';
+            }
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleIncorrectAnswer(answerOptionsContainer.children[0]); // Treat as incorrect
+            }
+        }, 1000);
+    }
+    
+    // --- LIFELINES ---
+
+    function use5050() {
+        if (gameState.lifelines['5050'] > 0) {
+            playSound(soundClick);
+            gameState.lifelines['5050']--;
+            
+            const buttons = Array.from(answerOptionsContainer.children);
+            const wrongAnswers = buttons.filter(btn => !btn.dataset.correct);
+            
+            // Shuffle wrong answers and disable two
+            wrongAnswers.sort(() => Math.random() - 0.5);
+            wrongAnswers[0].disabled = true;
+            wrongAnswers[0].style.opacity = '0.5';
+            wrongAnswers[1].disabled = true;
+            wrongAnswers[1].style.opacity = '0.5';
+
+            updateHUD();
+        }
+    }
+    
+    function useHint() {
+        if (gameState.lifelines.hint > 0) {
+            playSound(soundClick);
+            gameState.lifelines.hint--;
+            const question = questionsForCurrentLevel[gameState.currentQuestionIndex];
+            hintBox.textContent = `Hint: ${question.hint}`;
+            hintBox.classList.add('visible');
+            updateHUD();
+        }
+    }
+    
+    function useFreeze() {
+         if (gameState.lifelines.freeze > 0) {
+            playSound(soundClick);
+            gameState.lifelines.freeze--;
+            clearInterval(timerInterval);
+            timerDisplay.style.color = '#3498db'; // Blue for frozen
+            setTimeout(startTimer, 5000); // Resume timer after 5 seconds
+            updateHUD();
+        }
+    }
+
+    // --- MODAL & SETTINGS LOGIC ---
+    
+    function showModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+    
+    function hideModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+    
+    function updateStatsModal() {
+        document.getElementById('stat-level').textContent = gameState.stats.highestLevel;
+        document.getElementById('stat-highscore').textContent = gameState.stats.highScore > gameState.score ? gameState.stats.highScore : gameState.score;
+        const accuracy = gameState.stats.questionsAnswered > 0 ?
+            ((gameState.stats.correctAnswers / gameState.stats.questionsAnswered) * 100).toFixed(1) : 0;
+        document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
+        document.getElementById('stat-q-answered').textContent = gameState.stats.questionsAnswered;
+    }
+    
+    // --- DATA PERSISTENCE ---
+
+    function saveProgress() {
+        if (gameState.score > gameState.stats.highScore) {
+            gameState.stats.highScore = gameState.score;
+        }
+        localStorage.setItem('quizGameState', JSON.stringify(gameState));
+    }
+    
+    function loadProgress() {
+        const savedState = localStorage.getItem('quizGameState');
+        if (savedState) {
+            gameState = JSON.parse(savedState);
+        } else {
+            gameState = JSON.parse(JSON.stringify(defaultGameState));
+        }
+        document.getElementById('sound-toggle').checked = gameState.soundEnabled;
+    }
+    
+    function clearProgress() {
+        localStorage.removeItem('quizGameState');
+        resetGame();
+        location.reload();
+    }
+    
+    // --- SOUND ---
+    
+    function playSound(sound) {
+        if (gameState.soundEnabled) {
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Sound play was prevented."));
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    
+    function setupEventListeners() {
+        startBtn.addEventListener('click', () => startGame(false));
+        continueBtn.addEventListener('click', () => startGame(true));
+        
+        nextLevelBtn.addEventListener('click', () => {
+            playSound(soundClick);
+            hideModals();
+            loadLevel();
+        });
+        
+        restartGameBtn.addEventListener('click', () => {
+            playSound(soundClick);
+            hideModals();
+            startGame(false);
+        });
+        
+        playAgainBtn.addEventListener('click', () => {
+            playSound(soundClick);
+            hideModals();
+            startGame(false);
+        });
+        
+        // Lifelines
+        lifeline5050Btn.addEventListener('click', use5050);
+        lifelineHintBtn.addEventListener('click', useHint);
+        lifelineFreezeBtn.addEventListener('click', useFreeze);
+        
+        // Settings & Stats buttons
+        settingsBtn.addEventListener('click', () => { playSound(soundClick); showModal('settings-modal'); });
+        document.getElementById('close-settings-btn').addEventListener('click', () => { playSound(soundClick); hideModals(); });
+        document.getElementById('reset-progress-btn').addEventListener('click', () => {
+            if(confirm('Are you sure you want to reset all your progress? This cannot be undone.')) {
+                playSound(soundIncorrect);
+                clearProgress();
+            }
+        });
+        document.getElementById('sound-toggle').addEventListener('change', (e) => {
+            gameState.soundEnabled = e.target.checked;
+            saveProgress();
+        });
+        
+        statsBtn.addEventListener('click', () => {
+            playSound(soundClick);
+            updateStatsModal();
+            showModal('stats-modal');
+        });
+        document.getElementById('close-stats-btn').addEventListener('click', () => { playSound(soundClick); hideModals(); });
+    }
+
+    // --- INITIALIZE THE APP ---
+    init();
+</script>
+
+</body>
+</html>
